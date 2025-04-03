@@ -5,6 +5,20 @@ import { drawGame } from './renderer';
 import { handleInput } from './inputHandler';
 import { CharacterAppearance, CharacterType } from './characters/types';
 import { createCharacter } from './characters/characterClasses';
+import { 
+  initializeProgression, 
+  addExperience, 
+  updateAchievements, 
+  updateDailyMissions,
+  applyProgressionToPlayer,
+  applyAttributePoint
+} from './progression/progressionManager';
+import ProgressionUI, { 
+  LevelUpNotification,
+  AchievementNotification,
+  MissionNotification
+} from './progression/ProgressionUI';
+import { Achievement, Mission, PlayerProgression } from './progression/types';
 
 interface GameCanvasProps {
   width: number;
@@ -17,6 +31,14 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [keys, setKeys] = useState<Set<string>>(new Set());
+  const [progression, setProgression] = useState<PlayerProgression>(initializeProgression());
+  const [showLevelUp, setShowLevelUp] = useState<boolean>(false);
+  const [levelUpReward, setLevelUpReward] = useState<any>(null);
+  const [showAchievement, setShowAchievement] = useState<boolean>(false);
+  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+  const [showMission, setShowMission] = useState<boolean>(false);
+  const [completedMission, setCompletedMission] = useState<Mission | null>(null);
+  const [showProgressionPanel, setShowProgressionPanel] = useState<boolean>(false);
   
   useEffect(() => {
     const playerCharacter = createCharacter(characterType, { x: width / 2, y: height / 2 });
@@ -129,6 +151,14 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
     if (state.gameOver) return state;
     
     const newState = JSON.parse(JSON.stringify(state)) as GameState;
+    let updatedProgression = { ...progression };
+    let progressionEvents = {
+      enemyDefeated: false,
+      powerUpCollected: false,
+      coinCollected: false,
+      gemCollected: false,
+      levelCompleted: false
+    };
     
     newState.currentRoom.enemies = newState.currentRoom.enemies.map(enemy => {
       const dx = newState.player.position.x - enemy.position.x;
@@ -148,6 +178,12 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
         
         if (newState.player.health <= 0) {
           newState.gameOver = true;
+          
+          updatedProgression.stats.totalDeaths += 1;
+          
+          if (newState.score > updatedProgression.stats.highestScore) {
+            updatedProgression.stats.highestScore = newState.score;
+          }
         }
       }
       
@@ -164,6 +200,7 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
         
         if (distance < (powerUp.size + newState.player.size) / 2) {
           powerUp.collected = true;
+          progressionEvents.powerUpCollected = true;
           
           switch (powerUp.type) {
             case 'health':
@@ -216,12 +253,14 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
               if (!newState.player.coins) newState.player.coins = 0;
               newState.player.coins += collectible.value;
               newState.score += collectible.value;
+              progressionEvents.coinCollected = true;
               break;
               
             case 'gem':
               if (!newState.player.gems) newState.player.gems = 0;
               newState.player.gems += collectible.value;
               newState.score += collectible.value * 5;
+              progressionEvents.gemCollected = true;
               break;
               
             case 'key':
@@ -241,6 +280,120 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
         return effect.endTime > now;
       });
     }
+    
+    if (progressionEvents.enemyDefeated) {
+      const xpGained = 10 * newState.level;
+      const { updatedProgression: newProgression, levelUpRewards } = addExperience(
+        newState.player,
+        updatedProgression,
+        xpGained
+      );
+      
+      updatedProgression = newProgression;
+      
+      if (levelUpRewards.length > 0) {
+        setLevelUpReward(levelUpRewards[0]);
+        setShowLevelUp(true);
+      }
+      
+      const { updatedProgression: achievementProgression, unlockedAchievements } = updateAchievements(
+        newState,
+        updatedProgression,
+        { type: 'enemy_defeated' }
+      );
+      
+      updatedProgression = achievementProgression;
+      
+      if (unlockedAchievements.length > 0) {
+        setUnlockedAchievement(unlockedAchievements[0]);
+        setShowAchievement(true);
+      }
+      
+      const { updatedProgression: missionProgression, completedMissions } = updateDailyMissions(
+        updatedProgression,
+        { type: 'enemy_defeated' }
+      );
+      
+      updatedProgression = missionProgression;
+      
+      if (completedMissions.length > 0) {
+        setCompletedMission(completedMissions[0]);
+        setShowMission(true);
+      }
+    }
+    
+    if (progressionEvents.powerUpCollected) {
+      const { updatedProgression: achievementProgression, unlockedAchievements } = updateAchievements(
+        newState,
+        updatedProgression,
+        { type: 'powerup_collected' }
+      );
+      
+      updatedProgression = achievementProgression;
+      
+      if (unlockedAchievements.length > 0) {
+        setUnlockedAchievement(unlockedAchievements[0]);
+        setShowAchievement(true);
+      }
+      
+      const { updatedProgression: missionProgression, completedMissions } = updateDailyMissions(
+        updatedProgression,
+        { type: 'powerup_collected' }
+      );
+      
+      updatedProgression = missionProgression;
+      
+      if (completedMissions.length > 0) {
+        setCompletedMission(completedMissions[0]);
+        setShowMission(true);
+      }
+    }
+    
+    if (progressionEvents.coinCollected) {
+      const { updatedProgression: achievementProgression, unlockedAchievements } = updateAchievements(
+        newState,
+        updatedProgression,
+        { type: 'coin_collected', value: 1 }
+      );
+      
+      updatedProgression = achievementProgression;
+      
+      if (unlockedAchievements.length > 0) {
+        setUnlockedAchievement(unlockedAchievements[0]);
+        setShowAchievement(true);
+      }
+      
+      const { updatedProgression: missionProgression, completedMissions } = updateDailyMissions(
+        updatedProgression,
+        { type: 'coin_collected', value: 1 }
+      );
+      
+      updatedProgression = missionProgression;
+      
+      if (completedMissions.length > 0) {
+        setCompletedMission(completedMissions[0]);
+        setShowMission(true);
+      }
+    }
+    
+    if (progressionEvents.gemCollected) {
+      const { updatedProgression: achievementProgression, unlockedAchievements } = updateAchievements(
+        newState,
+        updatedProgression,
+        { type: 'gem_collected', value: 1 }
+      );
+      
+      updatedProgression = achievementProgression;
+      
+      if (unlockedAchievements.length > 0) {
+        setUnlockedAchievement(unlockedAchievements[0]);
+        setShowAchievement(true);
+      }
+    }
+    
+    newState.player = applyProgressionToPlayer(newState.player, updatedProgression);
+    
+    setProgression(updatedProgression);
     
     return newState;
   };
@@ -306,6 +459,7 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
               };
               
               setGameState(initialState);
+              setShowProgressionPanel(false);
             }}
           >
             Play Again
@@ -326,9 +480,104 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
         </span>
       </div>
       
-      <div className="absolute top-4 right-4 text-white font-bold">
-        Score: {gameState?.score || 0}
+      <div className="absolute top-4 right-4 flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-yellow-400 text-lg">🪙</span>
+          <span className="text-white font-bold">{gameState?.player.coins || 0}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-blue-400 text-lg">💎</span>
+          <span className="text-white font-bold">{gameState?.player.gems || 0}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-white font-bold">Score: {gameState?.score || 0}</span>
+        </div>
+        <button 
+          className="px-2 py-1 bg-purple-700 text-white rounded-md text-sm hover:bg-purple-600 transition-colors"
+          onClick={() => setShowProgressionPanel(!showProgressionPanel)}
+        >
+          {showProgressionPanel ? 'Hide Stats' : 'Show Stats'}
+        </button>
       </div>
+      
+      {/* Level and XP Bar */}
+      <div className="absolute bottom-4 left-4 right-4 flex items-center">
+        <span className="text-white font-bold mr-2">Lvl {gameState?.player.level || 1}</span>
+        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-purple-600 transition-all duration-300"
+            style={{ 
+              width: `${gameState && gameState.player.experience && gameState.player.experienceToNextLevel ? (gameState.player.experience / gameState.player.experienceToNextLevel) * 100 : 0}%` 
+            }}
+          />
+        </div>
+        <span className="text-white font-bold ml-2">
+          {gameState?.player.experience || 0}/{gameState?.player.experienceToNextLevel || 100} XP
+        </span>
+      </div>
+      
+      {/* Active Effects */}
+      {gameState?.player.activeEffects && gameState.player.activeEffects.length > 0 && (
+        <div className="absolute top-12 left-4 flex space-x-2">
+          {gameState.player.activeEffects.map((effect, index) => (
+            <div 
+              key={`${effect.type}-${index}`}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 border-2 border-purple-500"
+              title={`${effect.type}: ${effect.value}`}
+            >
+              {effect.type === 'speed' && '⚡'}
+              {effect.type === 'invincibility' && '🛡️'}
+              {effect.type === 'damage' && '⚔️'}
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Progression Panel */}
+      {showProgressionPanel && (
+        <div className="absolute right-4 top-16 w-64">
+          <ProgressionUI 
+            progression={progression} 
+            onApplySkillPoint={(attribute) => {
+              const updatedProgression = applyAttributePoint(progression, attribute);
+              setProgression(updatedProgression);
+              
+              if (gameState) {
+                const updatedPlayer = applyProgressionToPlayer(gameState.player, updatedProgression);
+                setGameState({
+                  ...gameState,
+                  player: updatedPlayer
+                });
+              }
+            }}
+          />
+        </div>
+      )}
+      
+      {/* Level Up Notification */}
+      {showLevelUp && levelUpReward && (
+        <LevelUpNotification 
+          level={levelUpReward.level}
+          rewards={levelUpReward.rewards}
+          onClose={() => setShowLevelUp(false)}
+        />
+      )}
+      
+      {/* Achievement Notification */}
+      {showAchievement && unlockedAchievement && (
+        <AchievementNotification 
+          achievement={unlockedAchievement}
+          onClose={() => setShowAchievement(false)}
+        />
+      )}
+      
+      {/* Mission Notification */}
+      {showMission && completedMission && (
+        <MissionNotification 
+          mission={completedMission}
+          onClose={() => setShowMission(false)}
+        />
+      )}
     </div>
   );
 };
