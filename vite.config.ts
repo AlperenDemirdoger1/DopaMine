@@ -7,6 +7,7 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     open: true,
+    host: true, // Expose to all network interfaces
   },
   resolve: {
     alias: {
