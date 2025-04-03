@@ -128,20 +128,27 @@ describe('Player Movement Tests', () => {
     expect(newState.player.position.x).toBeGreaterThan(initialX);
   });
   
-  it('should move player with arrow keys', () => {
-    const initialX = gameState.player.position.x;
+  it('should move player up with ArrowUp key', () => {
     const initialY = gameState.player.position.y;
-    
-    let newState = handleInput(gameState, new Set(['ArrowUp']));
+    const newState = handleInput(gameState, new Set(['ArrowUp']));
     expect(newState.player.position.y).toBeLessThan(initialY);
-    
-    newState = handleInput(gameState, new Set(['ArrowDown']));
+  });
+  
+  it('should move player down with ArrowDown key', () => {
+    const initialY = gameState.player.position.y;
+    const newState = handleInput(gameState, new Set(['ArrowDown']));
     expect(newState.player.position.y).toBeGreaterThan(initialY);
-    
-    newState = handleInput(gameState, new Set(['ArrowLeft']));
+  });
+  
+  it('should move player left with ArrowLeft key', () => {
+    const initialX = gameState.player.position.x;
+    const newState = handleInput(gameState, new Set(['ArrowLeft']));
     expect(newState.player.position.x).toBeLessThan(initialX);
-    
-    newState = handleInput(gameState, new Set(['ArrowRight']));
+  });
+  
+  it('should move player right with ArrowRight key', () => {
+    const initialX = gameState.player.position.x;
+    const newState = handleInput(gameState, new Set(['ArrowRight']));
     expect(newState.player.position.x).toBeGreaterThan(initialX);
   });
 });
