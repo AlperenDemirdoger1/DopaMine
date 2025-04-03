@@ -13,11 +13,26 @@ export const drawGame = (
   
   drawGrid(ctx, width, height);
   
+  if (gameState.collectibles && gameState.collectibles.length > 0) {
+    const { drawCollectibles } = require('./powerups/powerupRenderer');
+    drawCollectibles(ctx, gameState.collectibles);
+  }
+  
+  if (gameState.powerUps && gameState.powerUps.length > 0) {
+    const { drawPowerUps } = require('./powerups/powerupRenderer');
+    drawPowerUps(ctx, gameState.powerUps);
+  }
+  
   drawPlayer(ctx, gameState.player);
   
   gameState.currentRoom.enemies.forEach(enemy => {
     drawEnemy(ctx, enemy);
   });
+  
+  if (gameState.player.activeEffects && gameState.player.activeEffects.length > 0) {
+    const { drawActiveEffects } = require('./powerups/powerupRenderer');
+    drawActiveEffects(ctx, gameState);
+  }
 };
 
 const drawGrid = (

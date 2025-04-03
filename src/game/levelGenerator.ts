@@ -1,4 +1,5 @@
 import { Enemy, Room } from './types';
+import { generatePowerUpsAndCollectibles } from './powerups/powerupGenerator';
 
 const randomInt = (min: number, max: number): number => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -63,5 +64,30 @@ export const generateLevel = (width: number, height: number, level: number): Roo
     height,
     enemies,
     exits: [] // No exits in MVP version
+  };
+};
+
+export const generateLevelWithPowerUps = (
+  width: number, 
+  height: number, 
+  level: number, 
+  playerPosition: { x: number, y: number }
+) => {
+  const room = generateLevel(width, height, level);
+  
+  const enemyPositions = room.enemies.map(enemy => enemy.position);
+  
+  const { powerUps, collectibles } = generatePowerUpsAndCollectibles(
+    width,
+    height,
+    playerPosition,
+    enemyPositions,
+    level
+  );
+  
+  return {
+    room,
+    powerUps,
+    collectibles
   };
 };

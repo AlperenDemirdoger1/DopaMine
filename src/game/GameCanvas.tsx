@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { generateLevel } from './levelGenerator';
+import { generateLevelWithPowerUps } from './levelGenerator';
 import { GameState } from './types';
 import { drawGame } from './renderer';
 import { handleInput } from './inputHandler';
@@ -25,6 +25,13 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
       playerCharacter.appearance = characterAppearance;
     }
     
+    const { room, powerUps, collectibles } = generateLevelWithPowerUps(
+      width, 
+      height, 
+      1, 
+      playerCharacter.position
+    );
+    
     const initialState: GameState = {
       player: {
         id: playerCharacter.id,
@@ -38,16 +45,22 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
         type: playerCharacter.type,
         level: playerCharacter.level,
         experience: playerCharacter.experience,
-        experienceToNextLevel: playerCharacter.experienceToNextLevel
+        experienceToNextLevel: playerCharacter.experienceToNextLevel,
+        activeEffects: [],
+        coins: 0,
+        gems: 0,
+        keys: 0
       },
-      currentRoom: generateLevel(width, height, 1),
+      currentRoom: room,
       rooms: [],
       gameOver: false,
       score: 0,
       level: 1,
       characterSelected: true,
       characterType: characterType,
-      characterAppearance: characterAppearance
+      characterAppearance: characterAppearance,
+      powerUps: powerUps,
+      collectibles: collectibles
     };
     
     setGameState(initialState);
@@ -133,7 +146,6 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
       if (distance < (enemy.size + newState.player.size) / 2) {
         newState.player.health -= enemy.damage;
         
-        
         if (newState.player.health <= 0) {
           newState.gameOver = true;
         }
@@ -141,6 +153,94 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
       
       return enemy;
     });
+    
+    if (newState.powerUps && newState.powerUps.length > 0) {
+      newState.powerUps = newState.powerUps.map(powerUp => {
+        if (powerUp.collected) return powerUp;
+        
+        const dx = newState.player.position.x - powerUp.position.x;
+        const dy = newState.player.position.y - powerUp.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < (powerUp.size + newState.player.size) / 2) {
+          powerUp.collected = true;
+          
+          switch (powerUp.type) {
+            case 'health':
+              newState.player.health = Math.min(
+                newState.player.maxHealth,
+                newState.player.health + powerUp.value
+              );
+              break;
+              
+            case 'speed':
+            case 'invincibility':
+            case 'damage':
+              const now = Date.now();
+              powerUp.active = true;
+              powerUp.activatedAt = now;
+              powerUp.expiresAt = now + (powerUp.duration * 1000);
+              
+              if (!newState.player.activeEffects) {
+                newState.player.activeEffects = [];
+              }
+              
+              newState.player.activeEffects.push({
+                type: powerUp.type,
+                value: powerUp.value,
+                duration: powerUp.duration,
+                startTime: now,
+                endTime: now + (powerUp.duration * 1000)
+              });
+              break;
+          }
+        }
+        
+        return powerUp;
+      });
+    }
+    
+    if (newState.collectibles && newState.collectibles.length > 0) {
+      newState.collectibles = newState.collectibles.map(collectible => {
+        if (collectible.collected) return collectible;
+        
+        const dx = newState.player.position.x - collectible.position.x;
+        const dy = newState.player.position.y - collectible.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < (collectible.size + newState.player.size) / 2) {
+          collectible.collected = true;
+          
+          switch (collectible.type) {
+            case 'coin':
+              if (!newState.player.coins) newState.player.coins = 0;
+              newState.player.coins += collectible.value;
+              newState.score += collectible.value;
+              break;
+              
+            case 'gem':
+              if (!newState.player.gems) newState.player.gems = 0;
+              newState.player.gems += collectible.value;
+              newState.score += collectible.value * 5;
+              break;
+              
+            case 'key':
+              if (!newState.player.keys) newState.player.keys = 0;
+              newState.player.keys += collectible.value;
+              break;
+          }
+        }
+        
+        return collectible;
+      });
+    }
+    
+    if (newState.player.activeEffects && newState.player.activeEffects.length > 0) {
+      const now = Date.now();
+      newState.player.activeEffects = newState.player.activeEffects.filter(effect => {
+        return effect.endTime > now;
+      });
+    }
     
     return newState;
   };
@@ -167,6 +267,13 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
                 playerCharacter.appearance = characterAppearance;
               }
               
+              const { room, powerUps, collectibles } = generateLevelWithPowerUps(
+                width, 
+                height, 
+                1, 
+                { x: width / 2, y: height / 2 }
+              );
+              
               const initialState: GameState = {
                 player: {
                   id: playerCharacter.id,
@@ -180,16 +287,22 @@ const GameCanvas = ({ width, height, characterType = 'warrior', characterAppeara
                   type: playerCharacter.type,
                   level: playerCharacter.level,
                   experience: playerCharacter.experience,
-                  experienceToNextLevel: playerCharacter.experienceToNextLevel
+                  experienceToNextLevel: playerCharacter.experienceToNextLevel,
+                  activeEffects: [],
+                  coins: 0,
+                  gems: 0,
+                  keys: 0
                 },
-                currentRoom: generateLevel(width, height, 1),
+                currentRoom: room,
                 rooms: [],
                 gameOver: false,
                 score: 0,
                 level: 1,
                 characterSelected: true,
                 characterType: characterType,
-                characterAppearance: characterAppearance
+                characterAppearance: characterAppearance,
+                powerUps: powerUps,
+                collectibles: collectibles
               };
               
               setGameState(initialState);

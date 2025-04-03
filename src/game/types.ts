@@ -13,6 +13,14 @@ export interface Entity {
   size: number;
 }
 
+export interface PowerUpEffect {
+  type: string;
+  value: number;
+  duration: number;
+  startTime: number;
+  endTime: number;
+}
+
 export interface Player extends Entity {
   damage: number;
   score: number;
@@ -21,6 +29,10 @@ export interface Player extends Entity {
   experience?: number;
   experienceToNextLevel?: number;
   specialAbility?: any;
+  activeEffects?: PowerUpEffect[];
+  coins?: number;
+  gems?: number;
+  keys?: number;
 }
 
 export interface Enemy extends Entity {
@@ -47,6 +59,8 @@ export interface GameState {
   characterSelected: boolean;
   characterType?: string;
   characterAppearance?: any;
+  powerUps?: any[];
+  collectibles?: any[];
 }
 
 export type GameAction = 
