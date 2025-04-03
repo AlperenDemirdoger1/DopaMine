@@ -76,6 +76,20 @@ export interface Collectible {
   collected: boolean;
 }
 
+export interface Obstacle {
+  id: string;
+  type: 'spike' | 'laser' | 'turret' | 'wall';
+  position: Position;
+  size: number;
+  damage: number;
+  attackRange?: number;
+  attackCooldown?: number;
+  lastAttackTime?: number;
+  isActive: boolean;
+  activationInterval?: number;
+  lastActivationTime?: number;
+}
+
 export interface GameState {
   player: Player;
   currentRoom: Room;
@@ -83,9 +97,12 @@ export interface GameState {
   gameOver: boolean;
   score: number;
   level: number;
+  difficulty: 1 | 2 | 3 | 4 | 5;
   characterSelected: boolean;
   characterType: string;
   characterAppearance: any;
   powerUps: PowerUp[];
   collectibles: Collectible[];
+  obstacles: Obstacle[];
+  skillsAvailable: boolean;
 }

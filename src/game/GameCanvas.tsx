@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { generateLevelWithPowerUps } from './levelGenerator';
 import { GameState, Position } from './types';
 import { drawGame } from './renderer';
@@ -65,10 +65,13 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
       playerCharacter.appearance = characterAppearance;
     }
     
-    const { room, powerUps, collectibles } = generateLevelWithPowerUps(
+    const initialDifficulty = 1;
+    
+    const { room, powerUps, collectibles, obstacles } = generateLevelWithPowerUps(
       width, 
       height, 
       1, 
+      initialDifficulty,
       playerCharacter.position
     );
     
@@ -96,11 +99,14 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
       gameOver: false,
       score: 0,
       level: 1,
+      difficulty: initialDifficulty,
       characterSelected: true,
       characterType: characterType,
       characterAppearance: characterAppearance,
       powerUps: powerUps,
-      collectibles: collectibles
+      collectibles: collectibles,
+      obstacles: obstacles,
+      skillsAvailable: true
     };
     
     setGameState(initialState);
@@ -197,6 +203,110 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
           damageDealt: 0,
           damageTaken: 0
         };
+        
+        newState.obstacles.forEach(obstacle => {
+          const now = Date.now();
+          
+          switch (obstacle.type) {
+            case 'spike':
+              if (!obstacle.isActive && now - (obstacle.lastActivationTime || 0) > (obstacle.activationInterval || 3000)) {
+                obstacle.isActive = true;
+                obstacle.lastActivationTime = now;
+                
+                setTimeout(() => {
+                  if (newState.obstacles.find(o => o.id === obstacle.id)) {
+                    obstacle.isActive = false;
+                  }
+                }, 1000);
+              }
+              break;
+              
+            case 'laser':
+            case 'turret':
+              const dx = newState.player.position.x - obstacle.position.x;
+              const dy = newState.player.position.y - obstacle.position.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance < (obstacle.attackRange || 150) && 
+                  now - (obstacle.lastAttackTime || 0) > (obstacle.attackCooldown || 2000)) {
+                obstacle.lastAttackTime = now;
+                
+                newState.player.health -= obstacle.damage;
+                progressionEvents.damageTaken += obstacle.damage;
+                
+                playSound('playerDamage');
+                setFeedbackIndicators(prev => [
+                  ...prev,
+                  {
+                    id: `obstacle-damage-${Date.now()}`,
+                    type: 'damage',
+                    value: obstacle.damage,
+                    position: { 
+                      x: newState.player.position.x, 
+                      y: newState.player.position.y - 20 
+                    }
+                  }
+                ]);
+                
+                if (newState.player.health <= 0) {
+                  newState.gameOver = true;
+                  playSound('gameOver');
+                  
+                  updatedProgression.stats.totalDeaths += 1;
+                  
+                  if (newState.score > updatedProgression.stats.highestScore) {
+                    updatedProgression.stats.highestScore = newState.score;
+                  }
+                }
+              }
+              break;
+          }
+          
+          if (obstacle.type === 'wall' || (obstacle.isActive && obstacle.type === 'spike')) {
+            const dx = newState.player.position.x - obstacle.position.x;
+            const dy = newState.player.position.y - obstacle.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < (obstacle.size + newState.player.size) / 2) {
+              const pushDistance = (obstacle.size + newState.player.size) / 2 - distance;
+              const pushX = (dx / distance) * pushDistance;
+              const pushY = (dy / distance) * pushDistance;
+              
+              newState.player.position.x += pushX;
+              newState.player.position.y += pushY;
+              
+              if (obstacle.type === 'spike' && obstacle.isActive) {
+                newState.player.health -= obstacle.damage;
+                progressionEvents.damageTaken += obstacle.damage;
+                
+                playSound('playerDamage');
+                setFeedbackIndicators(prev => [
+                  ...prev,
+                  {
+                    id: `spike-damage-${Date.now()}`,
+                    type: 'damage',
+                    value: obstacle.damage,
+                    position: { 
+                      x: newState.player.position.x, 
+                      y: newState.player.position.y - 20 
+                    }
+                  }
+                ]);
+                
+                if (newState.player.health <= 0) {
+                  newState.gameOver = true;
+                  playSound('gameOver');
+                  
+                  updatedProgression.stats.totalDeaths += 1;
+                  
+                  if (newState.score > updatedProgression.stats.highestScore) {
+                    updatedProgression.stats.highestScore = newState.score;
+                  }
+                }
+              }
+            }
+          }
+        });
         
         newState.currentRoom.enemies.forEach(enemy => {
           const dx = newState.player.position.x - enemy.position.x;
@@ -458,7 +568,7 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
         }
         
         setFeedbackIndicators(prev => 
-          prev.filter((indicator, index) => index >= prev.length - 10)
+          prev.filter((_unused, index) => index >= prev.length - 10)
         );
         
         setGameState(newState);
@@ -595,6 +705,173 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
           mission={notifications.mission}
           onClose={() => setNotifications(prev => ({ ...prev, mission: null }))}
         />
+      )}
+      
+      {/* Difficulty Selection UI */}
+      {gameState && !gameState.gameOver && (
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
+          <div className="text-white font-bold mb-1">Difficulty: {gameState.difficulty}</div>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map(level => (
+              <button
+                key={level}
+                className={`w-8 h-8 rounded-full font-bold ${
+                  gameState.difficulty === level 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => {
+                  playSound('buttonClick');
+                  
+                  const { room, powerUps, collectibles, obstacles } = generateLevelWithPowerUps(
+                    width,
+                    height,
+                    gameState.level,
+                    level as 1 | 2 | 3 | 4 | 5,
+                    gameState.player.position
+                  );
+                  
+                  setGameState({
+                    ...gameState,
+                    difficulty: level as 1 | 2 | 3 | 4 | 5,
+                    currentRoom: room,
+                    powerUps,
+                    collectibles,
+                    obstacles
+                  });
+                }}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Skills UI */}
+      {gameState && !gameState.gameOver && gameState.skillsAvailable && (
+        <div className="absolute bottom-4 left-4 flex gap-2">
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200"
+            onClick={() => {
+              if (!gameState) return;
+              
+              playSound('skillActivate');
+              
+              const healAmount = 20 + (gameState.player.level || 1) * 5;
+              
+              setGameState({
+                ...gameState,
+                player: {
+                  ...gameState.player,
+                  health: Math.min(gameState.player.maxHealth, gameState.player.health + healAmount)
+                }
+              });
+              
+              setFeedbackIndicators(prev => [
+                ...prev,
+                {
+                  id: `skill-heal-${Date.now()}`,
+                  type: 'heal',
+                  value: healAmount,
+                  position: { 
+                    x: gameState.player.position.x, 
+                    y: gameState.player.position.y - 20 
+                  }
+                }
+              ]);
+            }}
+          >
+            Heal
+          </button>
+          
+          <button
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200"
+            onClick={() => {
+              if (!gameState) return;
+              
+              playSound('skillActivate');
+              
+              const attackRange = 150;
+              const damageAmount = 15 + (gameState.player.level || 1) * 3;
+              
+              const newState = { ...gameState };
+              
+              newState.currentRoom.enemies = newState.currentRoom.enemies.map(enemy => {
+                const dx = enemy.position.x - gameState.player.position.x;
+                const dy = enemy.position.y - gameState.player.position.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < attackRange) {
+                  enemy.health -= damageAmount;
+                  
+                  setFeedbackIndicators(prev => [
+                    ...prev,
+                    {
+                      id: `skill-damage-${Date.now()}-${enemy.id}`,
+                      type: 'damage',
+                      value: damageAmount,
+                      position: { 
+                        x: enemy.position.x, 
+                        y: enemy.position.y - 20 
+                      }
+                    }
+                  ]);
+                }
+                
+                return enemy;
+              }).filter(enemy => enemy.health > 0);
+              
+              setGameState(newState);
+            }}
+          >
+            Attack
+          </button>
+          
+          <button
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200"
+            onClick={() => {
+              if (!gameState) return;
+              
+              playSound('skillActivate');
+              
+              const now = Date.now();
+              const duration = 5; // 5 seconds
+              
+              setGameState({
+                ...gameState,
+                player: {
+                  ...gameState.player,
+                  activeEffects: [
+                    ...(gameState.player.activeEffects || []),
+                    {
+                      type: 'speed',
+                      value: 50,
+                      duration,
+                      startTime: now,
+                      endTime: now + (duration * 1000)
+                    }
+                  ]
+                }
+              });
+              
+              setFeedbackIndicators(prev => [
+                ...prev,
+                {
+                  id: `skill-speed-${Date.now()}`,
+                  type: 'xp',
+                  value: 50,
+                  position: { 
+                    x: gameState.player.position.x, 
+                    y: gameState.player.position.y - 20 
+                  }
+                }
+              ]);
+            }}
+          >
+            Speed
+          </button>
+        </div>
       )}
       
       {/* Game Over Screen */}
