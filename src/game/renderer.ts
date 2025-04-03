@@ -48,13 +48,73 @@ const drawPlayer = (
   ctx: CanvasRenderingContext2D,
   player: GameState['player']
 ): void => {
-  ctx.fillStyle = '#6a4dff';
-  ctx.beginPath();
-  ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI * 2);
-  ctx.fill();
+  const defaultColors = {
+    warrior: { color: '#d63031', outfitColor: '#e17055' },
+    mage: { color: '#0984e3', outfitColor: '#74b9ff' },
+    archer: { color: '#00b894', outfitColor: '#55efc4' },
+    player: { color: '#6a4dff', outfitColor: '#8c7ae6' }
+  };
+  
+  const characterType = player.type || 'player';
+  
+  const color = player.type && player.type in defaultColors
+                ? defaultColors[player.type as keyof typeof defaultColors].color
+                : '#6a4dff';
+                
+  const outfitColor = player.type && player.type in defaultColors
+                      ? defaultColors[player.type as keyof typeof defaultColors].outfitColor
+                      : '#8c7ae6';
+  
+  ctx.fillStyle = color;
+  
+  if (characterType === 'warrior') {
+    ctx.beginPath();
+    ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = outfitColor;
+    ctx.beginPath();
+    ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI);
+    ctx.fill();
+    
+  } else if (characterType === 'mage') {
+    ctx.beginPath();
+    ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = outfitColor;
+    ctx.beginPath();
+    ctx.moveTo(player.position.x - player.size / 2, player.position.y);
+    ctx.lineTo(player.position.x, player.position.y - player.size);
+    ctx.lineTo(player.position.x + player.size / 2, player.position.y);
+    ctx.closePath();
+    ctx.fill();
+    
+  } else if (characterType === 'archer') {
+    ctx.beginPath();
+    ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = outfitColor;
+    ctx.beginPath();
+    ctx.arc(player.position.x + player.size / 2, player.position.y, player.size / 3, Math.PI * 1.5, Math.PI * 0.5, false);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(player.position.x, player.position.y);
+    ctx.lineTo(player.position.x + player.size, player.position.y);
+    ctx.stroke();
+    
+  } else {
+    ctx.beginPath();
+    ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
   
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(player.position.x, player.position.y, player.size / 2, 0, Math.PI * 2);
   ctx.stroke();
   
   const healthBarWidth = player.size;
@@ -76,6 +136,13 @@ const drawPlayer = (
     healthBarWidth * healthPercentage,
     healthBarHeight
   );
+  
+  if (player.level) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Lvl ${player.level}`, player.position.x, player.position.y - player.size / 2 - 15);
+  }
 };
 
 const drawEnemy = (

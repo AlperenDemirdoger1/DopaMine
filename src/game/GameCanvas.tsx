@@ -1,36 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
 import { generateLevel } from './levelGenerator';
-import { GameState, Position } from './types';
+import { GameState } from './types';
 import { drawGame } from './renderer';
 import { handleInput } from './inputHandler';
+import { CharacterAppearance, CharacterType } from './characters/types';
+import { createCharacter } from './characters/characterClasses';
 
 interface GameCanvasProps {
   width: number;
   height: number;
+  characterType?: CharacterType;
+  characterAppearance?: CharacterAppearance;
 }
 
-const GameCanvas = ({ width, height }: GameCanvasProps) => {
+const GameCanvas = ({ width, height, characterType = 'warrior', characterAppearance }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [keys, setKeys] = useState<Set<string>>(new Set());
   
   useEffect(() => {
+    const playerCharacter = createCharacter(characterType, { x: width / 2, y: height / 2 });
+    
+    if (characterAppearance) {
+      playerCharacter.appearance = characterAppearance;
+    }
+    
     const initialState: GameState = {
       player: {
-        id: 'player',
-        position: { x: width / 2, y: height / 2 },
-        health: 100,
-        maxHealth: 100,
-        damage: 20,
+        id: playerCharacter.id,
+        position: playerCharacter.position,
+        health: playerCharacter.stats.health,
+        maxHealth: playerCharacter.stats.health,
+        damage: playerCharacter.stats.damage,
         score: 0,
-        sprite: 'player',
-        size: 30
+        sprite: playerCharacter.type,
+        size: playerCharacter.appearance.size,
+        type: playerCharacter.type,
+        level: playerCharacter.level,
+        experience: playerCharacter.experience,
+        experienceToNextLevel: playerCharacter.experienceToNextLevel
       },
       currentRoom: generateLevel(width, height, 1),
       rooms: [],
       gameOver: false,
       score: 0,
-      level: 1
+      level: 1,
+      characterSelected: true,
+      characterType: characterType,
+      characterAppearance: characterAppearance
     };
     
     setGameState(initialState);
@@ -144,22 +161,35 @@ const GameCanvas = ({ width, height }: GameCanvasProps) => {
           <button 
             className="px-6 py-3 bg-purple-600 text-white rounded-full text-xl hover:bg-purple-700 transition-colors"
             onClick={() => {
+              const playerCharacter = createCharacter(characterType, { x: width / 2, y: height / 2 });
+              
+              if (characterAppearance) {
+                playerCharacter.appearance = characterAppearance;
+              }
+              
               const initialState: GameState = {
                 player: {
-                  id: 'player',
-                  position: { x: width / 2, y: height / 2 },
-                  health: 100,
-                  maxHealth: 100,
-                  damage: 20,
+                  id: playerCharacter.id,
+                  position: playerCharacter.position,
+                  health: playerCharacter.stats.health,
+                  maxHealth: playerCharacter.stats.health,
+                  damage: playerCharacter.stats.damage,
                   score: 0,
-                  sprite: 'player',
-                  size: 30
+                  sprite: playerCharacter.type,
+                  size: playerCharacter.appearance.size,
+                  type: playerCharacter.type,
+                  level: playerCharacter.level,
+                  experience: playerCharacter.experience,
+                  experienceToNextLevel: playerCharacter.experienceToNextLevel
                 },
                 currentRoom: generateLevel(width, height, 1),
                 rooms: [],
                 gameOver: false,
                 score: 0,
-                level: 1
+                level: 1,
+                characterSelected: true,
+                characterType: characterType,
+                characterAppearance: characterAppearance
               };
               
               setGameState(initialState);

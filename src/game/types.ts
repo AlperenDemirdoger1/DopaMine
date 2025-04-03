@@ -16,6 +16,11 @@ export interface Entity {
 export interface Player extends Entity {
   damage: number;
   score: number;
+  type?: string;
+  level?: number;
+  experience?: number;
+  experienceToNextLevel?: number;
+  specialAbility?: any;
 }
 
 export interface Enemy extends Entity {
@@ -39,6 +44,9 @@ export interface GameState {
   gameOver: boolean;
   score: number;
   level: number;
+  characterSelected: boolean;
+  characterType?: string;
+  characterAppearance?: any;
 }
 
 export type GameAction = 
