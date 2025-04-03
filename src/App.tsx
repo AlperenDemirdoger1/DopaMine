@@ -1,8 +1,37 @@
+import { useState } from 'react'
 import './App.css'
 import { Button } from '@/components/ui/button'
 import { Brain, Gamepad2, Play } from 'lucide-react'
+import Game from './pages/Game'
 
 function App() {
+  const [showGame, setShowGame] = useState(false)
+
+  const handleStartGame = () => {
+    setShowGame(true)
+  }
+
+  const handleReturnToHome = () => {
+    setShowGame(false)
+  }
+
+  if (showGame) {
+    return (
+      <div>
+        <Game />
+        <div className="fixed bottom-4 left-4">
+          <Button 
+            variant="outline" 
+            onClick={handleReturnToHome}
+            className="bg-gray-800 bg-opacity-70 text-white border-gray-600"
+          >
+            Return to Home
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-purple-900 text-white flex flex-col items-center justify-center p-4">
       <div className="flex items-center gap-4 mb-6">
@@ -27,7 +56,10 @@ function App() {
         </p>
       </div>
       
-      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-6 text-xl rounded-full flex items-center gap-2">
+      <Button 
+        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-6 text-xl rounded-full flex items-center gap-2"
+        onClick={handleStartGame}
+      >
         <Play />
         Get Ready to Play
       </Button>
