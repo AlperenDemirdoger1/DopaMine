@@ -9,7 +9,7 @@ export const handleInput = (
   const newState = { ...gameState };
   const player = { ...newState.player };
   const moveSpeed = player.activeEffects?.some(effect => effect.type === 'speed') 
-    ? 5 * (1 + player.activeEffects.find(effect => effect.type === 'speed')?.value / 100 || 0)
+    ? 5 * (1 + (player.activeEffects.find(effect => effect.type === 'speed')?.value ?? 0) / 100)
     : 5;
   
   if (keys.has('w') || keys.has('ArrowUp')) {
@@ -40,7 +40,7 @@ export const handleInput = (
                         player.type === 'mage' ? 120 : 50;
     
     const damageMultiplier = player.activeEffects?.some(effect => effect.type === 'damage')
-      ? 1 + (player.activeEffects.find(effect => effect.type === 'damage')?.value / 100 || 0)
+      ? 1 + (player.activeEffects.find(effect => effect.type === 'damage')?.value ?? 0) / 100
       : 1;
     
     newState.currentRoom.enemies = newState.currentRoom.enemies.filter(enemy => {
