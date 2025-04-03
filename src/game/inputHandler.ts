@@ -1,4 +1,5 @@
 import { GameState, Position } from './types';
+import { generateLevel } from './levelGenerator';
 
 export const handleInput = (gameState: GameState, keys: Set<string>): GameState => {
   const newState = JSON.parse(JSON.stringify(gameState)) as GameState;
@@ -57,7 +58,6 @@ export const handleInput = (gameState: GameState, keys: Set<string>): GameState 
     if (newState.currentRoom.enemies.length === 0) {
       newState.level += 1;
       
-      const { generateLevel } = require('./levelGenerator');
       newState.currentRoom = generateLevel(
         newState.currentRoom.width,
         newState.currentRoom.height,
@@ -98,7 +98,6 @@ export const handleTouchInput = (
     
     if (newState.currentRoom.enemies.length === 0) {
       newState.level += 1;
-      const { generateLevel } = require('./levelGenerator');
       newState.currentRoom = generateLevel(
         newState.currentRoom.width,
         newState.currentRoom.height,
