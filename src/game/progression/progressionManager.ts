@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import { 
   PlayerProgression, 
   Achievement, 
@@ -8,7 +8,7 @@ import {
   AchievementReward
 } from './types';
 
-export const initializeProgression = (characterType: string): PlayerProgression => {
+export const initializeProgression = (_characterType: string): PlayerProgression => {
   return {
     level: 1,
     experience: 0,
@@ -30,6 +30,7 @@ export const initializeProgression = (characterType: string): PlayerProgression 
       totalKeysCollected: 0,
       totalPowerUpsCollected: 0,
       totalLevelsCompleted: 0,
+      chaptersCompleted: 0,
       highestLevel: 1,
       highestScore: 0,
       totalDeaths: 0,
@@ -487,7 +488,11 @@ const generateDailyMissions = (count: number = 3): Mission[] => {
       progress: 0,
       target,
       expiresAt,
-      reward: missionType.reward
+      reward: {
+        type: missionType.reward.type as "xp" | "coins" | "gems" | "item",
+        value: missionType.reward.value,
+        itemId: undefined // Set default value since itemId might not exist in the original reward
+      }
     });
   }
   

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CharacterType } from './game/characters/types';
 import CharacterSelection from './game/characters/CharacterSelection';
 import Game from './pages/Game';
 import { CountryCode } from './game/characters/CountryFlagSelector';
 
 function App() {
-  const [characterSelected, setCharacterSelected] = useState<boolean>(false);
+  const [_, setCharacterSelected] = useState<boolean>(false);
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterType>('warrior');
   const [selectedCountryFlag, setSelectedCountryFlag] = useState<CountryCode>('US');
   const [gameStarted, setGameStarted] = useState<boolean>(false);
