@@ -1,4 +1,6 @@
 
+import { CountryCode } from './CountryFlagSelector';
+
 export type CharacterType = 'warrior' | 'mage' | 'archer';
 
 export interface CharacterStats {
@@ -13,6 +15,7 @@ export interface CharacterAppearance {
   color: string;
   size: number;
   sprite: string;
+  countryFlag?: CountryCode;
 }
 
 export interface Character {

@@ -26,14 +26,17 @@ import {
   preloadGameSounds 
 } from './audio/audioManager';
 
+import { CountryCode } from './characters/CountryFlagSelector';
+
 interface GameCanvasProps {
   width: number;
   height: number;
   characterType: CharacterType;
   characterAppearance?: CharacterAppearance;
+  countryFlag: CountryCode;
 }
 
-const GameCanvas = ({ width, height, characterType, characterAppearance }: GameCanvasProps) => {
+const GameCanvas = ({ width, height, characterType, characterAppearance, countryFlag }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [keys, setKeys] = useState<Set<string>>(new Set());
@@ -59,10 +62,15 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
   useEffect(() => {
     preloadGameSounds();
     
-    const playerCharacter = createCharacter(characterType, { x: width / 2, y: height / 2 });
+    const playerCharacter = createCharacter(characterType, { x: width / 2, y: height / 2 }, {
+      countryFlag: countryFlag
+    });
     
     if (characterAppearance) {
-      playerCharacter.appearance = characterAppearance;
+      playerCharacter.appearance = {
+        ...characterAppearance,
+        countryFlag: countryFlag
+      };
     }
     
     const initialDifficulty = 1;
@@ -116,7 +124,7 @@ const GameCanvas = ({ width, height, characterType, characterAppearance }: GameC
     
     initAudio(); // Must be called after user interaction
     playSound('menuSelect');
-  }, [width, height, characterType, characterAppearance]);
+  }, [width, height, characterType, characterAppearance, countryFlag]);
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

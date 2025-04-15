@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
 import { CharacterType } from './types';
+import CountryFlagSelector, { CountryCode } from './CountryFlagSelector';
 
 interface CharacterSelectionProps {
-  onSelectCharacter: (characterType: CharacterType) => void;
+  onSelectCharacter: (characterType: CharacterType, countryFlag: CountryCode) => void;
 }
 
 const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelectCharacter }) => {
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterType>('warrior');
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>('US');
   
   const handleCharacterSelect = (characterType: CharacterType) => {
     setSelectedCharacter(characterType);
   };
   
+  const handleCountrySelect = (country: CountryCode) => {
+    setSelectedCountry(country);
+  };
+  
   const handleStartGame = () => {
-    onSelectCharacter(selectedCharacter);
+    onSelectCharacter(selectedCharacter, selectedCountry);
   };
   
   return (
@@ -126,6 +132,14 @@ const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelectCharact
             Agile ranged fighter with high speed and range. Special ability: Multishot.
           </p>
         </div>
+      </div>
+      
+      {/* Country Flag Selection */}
+      <div className="mb-8 p-6 bg-gray-700 rounded-lg w-full max-w-md">
+        <CountryFlagSelector 
+          selectedCountry={selectedCountry} 
+          onSelectCountry={handleCountrySelect} 
+        />
       </div>
       
       <button

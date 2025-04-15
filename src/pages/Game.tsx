@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CharacterType } from '../game/characters/types';
-import { createCharacter } from '../game/characters/characterClasses';
+import { CountryCode } from '../game/characters/CountryFlagSelector';
 import GameCanvas from '../game/GameCanvas';
 
 interface GameProps {
   characterType: CharacterType;
+  countryFlag: CountryCode;
   onBackToMenu: () => void;
 }
 
-const Game: React.FC<GameProps> = ({ characterType, onBackToMenu }) => {
+const Game: React.FC<GameProps> = ({ characterType, countryFlag, onBackToMenu }) => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [gameOver, setGameOver] = useState<boolean>(false);
@@ -75,6 +76,7 @@ const Game: React.FC<GameProps> = ({ characterType, onBackToMenu }) => {
           width={window.innerWidth}
           height={window.innerHeight}
           characterType={characterType}
+          countryFlag={countryFlag}
         />
       )}
     </div>
