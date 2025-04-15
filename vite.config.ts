@@ -8,7 +8,7 @@ export default defineConfig({
     strictPort: false,
     open: true,
     host: true, // Expose to all network interfaces
-    allowedHosts: ['react-vite-app-tunnel-uecgywsd.devinapps.com', 'devinapps.com'],
+    allowedHosts: ['react-vite-app-tunnel-uecgywsd.devinapps.com', 'devinapps.com', 'react-vite-app-tunnel-rzq4v14t.devinapps.com'],
   },
   resolve: {
     alias: {
