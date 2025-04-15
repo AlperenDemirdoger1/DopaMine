@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Room, PowerUp, Collectible, Position, Obstacle } from './types';
+import { createEnemy, EnemyType } from './enemies/EnemyTypes';
 
 export const generateLevelWithPowerUps = (
   width: number,
@@ -35,7 +36,20 @@ const generateEnemies = (
   const enemies = [];
   const enemyCount = Math.min(3 + level * 2 + difficulty * 2, 25); 
   
-  const enemyTypes = ['slime', 'skeleton', 'ghost'];
+  const availableEnemyTypes: EnemyType[] = ['minion'];
+  
+  if (level >= 2 || difficulty >= 2) {
+    availableEnemyTypes.push('archer');
+  }
+  
+  if (level >= 3 || difficulty >= 3) {
+    availableEnemyTypes.push('mage');
+  }
+  
+  if (level >= 4 || difficulty >= 4) {
+    availableEnemyTypes.push('brute');
+  }
+  
   const safeRadius = 150; // Safe zone around player
   
   for (let i = 0; i < enemyCount; i++) {
@@ -60,19 +74,46 @@ const generateEnemies = (
       }
     }
     
-    const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    const randomTypeIndex = Math.floor(Math.random() * availableEnemyTypes.length);
+    const enemyType = availableEnemyTypes[randomTypeIndex];
     
-    enemies.push({
-      id: uuidv4(),
+    const difficultyMultiplier = 1 + (level * 0.2) + (difficulty * 0.3);
+    const enemy = createEnemy(
+      enemyType,
       position,
-      health: 20 + level * 10 + difficulty * 15,
-      maxHealth: 20 + level * 10 + difficulty * 15,
-      damage: 3 + level * 1 + difficulty * 2,
-      moveSpeed: 0.8 + level * 0.3 + difficulty * 0.4,
-      type: enemyType,
-      sprite: enemyType,
-      size: 30
-    });
+      uuidv4(),
+      difficultyMultiplier
+    );
+    
+    enemies.push(enemy);
+  }
+  
+  if (level >= 5 || difficulty >= 4) {
+    let bossPosition: Position = {
+      x: width / 2,
+      y: height / 2
+    };
+    
+    const dx = bossPosition.x - playerPosition.x;
+    const dy = bossPosition.y - playerPosition.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < safeRadius * 1.5) {
+      bossPosition = {
+        x: playerPosition.x > width / 2 ? width / 4 : width * 3 / 4,
+        y: playerPosition.y > height / 2 ? height / 4 : height * 3 / 4
+      };
+    }
+    
+    const bossMultiplier = 1 + (level * 0.3) + (difficulty * 0.4);
+    const boss = createEnemy(
+      'boss',
+      bossPosition,
+      `boss-${uuidv4()}`,
+      bossMultiplier
+    );
+    
+    enemies.push(boss);
   }
   
   return enemies;

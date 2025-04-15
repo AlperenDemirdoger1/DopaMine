@@ -45,6 +45,7 @@ export interface Enemy {
   lastAttackTime?: number;
   attackCooldown?: number;
   attackRange?: number;
+  experienceValue?: number;
 }
 
 export interface Room {

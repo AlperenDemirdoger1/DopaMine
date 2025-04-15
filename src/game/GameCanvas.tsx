@@ -268,7 +268,7 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
               {
                 id: `defeat-${Date.now()}`,
                 type: 'xp',
-                value: 10 * newState.level,
+                value: prevEnemies.find(e => !newEnemies.some(ne => ne.id === e.id))?.experienceValue || (10 * newState.level),
                 position: { 
                   x: newState.player.position.x + 20, 
                   y: newState.player.position.y - 30 
@@ -598,8 +598,12 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
           
           if (newState.player.experience !== undefined && 
               newState.player.experienceToNextLevel !== undefined) {
+            const defeatedEnemyXP = progressionEvents.enemyDefeated 
+              ? (gameState.currentRoom.enemies.find(e => e.experienceValue)?.experienceValue || 10 * newState.difficulty)
+              : 0;
+              
             const xpGained = 
-              (progressionEvents.enemyDefeated ? 10 : 0) + 
+              defeatedEnemyXP + 
               (progressionEvents.powerUpCollected ? 5 : 0) + 
               (progressionEvents.collectibleCollected ? 2 : 0) + 
               (progressionEvents.levelCompleted ? 50 : 0);
