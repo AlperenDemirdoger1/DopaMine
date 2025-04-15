@@ -49,6 +49,7 @@ export interface PlayerStats {
   totalKeysCollected: number;
   totalPowerUpsCollected: number;
   totalLevelsCompleted: number;
+  chaptersCompleted: number;
   highestLevel: number;
   highestScore: number;
   totalDeaths: number;

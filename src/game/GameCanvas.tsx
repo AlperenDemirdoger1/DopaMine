@@ -29,6 +29,7 @@ import MotionFeedback from './ui/MotionFeedback';
 import SkillBar, { Skill } from './ui/SkillBar';
 import AttackVisualizer, { AttackVisualizerProps } from './combat/AttackVisualizer';
 import EnemyAttackController from './combat/EnemyAttackController';
+import ChapterSystem from './progression/ChapterSystem';
 
 import { CountryCode } from './characters/CountryFlagSelector';
 
@@ -75,6 +76,7 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
   
   const [activeAttacks, setActiveAttacks] = useState<AttackVisualizerProps[]>([]);
   const [enemyAttackDamage, setEnemyAttackDamage] = useState<number>(0);
+  const [isChapterTransitioning, setIsChapterTransitioning] = useState<boolean>(false);
   
   const [skills, setSkills] = useState<Skill[]>([
     {
@@ -747,6 +749,50 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
     playSound('buttonClick');
   };
   
+  const handleChapterComplete = (chapterId: number) => {
+    if (!progression) return;
+    
+    const updatedProgression = { ...progression };
+    updatedProgression.stats.chaptersCompleted += 1;
+    
+    if (chapterId > updatedProgression.stats.highestLevel) {
+      updatedProgression.stats.highestLevel = chapterId;
+    }
+    
+    setProgression(updatedProgression);
+    setIsChapterTransitioning(true);
+    
+    playSound('levelComplete');
+  };
+  
+  const handleTransitionToNextChapter = () => {
+    if (!gameState) return;
+    
+    const nextLevel = gameState.level + 1;
+    const nextDifficulty = Math.min(5, gameState.difficulty + 1) as 1 | 2 | 3 | 4 | 5;
+    
+    const { room, powerUps, collectibles, obstacles } = generateLevelWithPowerUps(
+      width, 
+      height, 
+      nextLevel, 
+      nextDifficulty,
+      gameState.player.position
+    );
+    
+    setGameState({
+      ...gameState,
+      currentRoom: room,
+      powerUps: powerUps,
+      collectibles: collectibles,
+      obstacles: obstacles,
+      level: nextLevel,
+      difficulty: nextDifficulty
+    });
+    
+    setIsChapterTransitioning(false);
+    playSound('levelStart');
+  };
+  
   const handleUseSkill = (skillId: string) => {
     if (!gameState) return;
     
@@ -982,6 +1028,28 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
                 {level}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Chapter System */}
+      {gameState && !gameState.gameOver && (
+        <ChapterSystem
+          gameState={gameState}
+          onChapterComplete={handleChapterComplete}
+          onTransitionToNextChapter={handleTransitionToNextChapter}
+        />
+      )}
+      
+      {/* Chapter Transition Overlay */}
+      {isChapterTransitioning && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+          <div className="text-white text-center">
+            <h2 className="text-3xl font-bold mb-4">Chapter Complete!</h2>
+            <p className="text-xl mb-8">Transitioning to next chapter...</p>
+            <div className="w-32 h-2 bg-gray-700 mx-auto rounded-full overflow-hidden">
+              <div className="h-full bg-purple-600 animate-pulse"></div>
+            </div>
           </div>
         </div>
       )}

@@ -14,7 +14,9 @@ export type SoundEffectType =
   | 'gameOver'
   | 'menuSelect'
   | 'buttonClick'
-  | 'skillActivate';
+  | 'skillActivate'
+  | 'levelComplete'
+  | 'levelStart';
 
 export interface AudioSettings {
   masterVolume: number;
@@ -149,6 +151,8 @@ export const generatePlaceholderSounds = (): void => {
   soundBuffers['menuSelect'] = generateTone(350, 0.1, 'sine');
   soundBuffers['buttonClick'] = generateTone(250, 0.1, 'sine');
   soundBuffers['skillActivate'] = generateTone(550, 0.3, 'square');
+  soundBuffers['levelComplete'] = generateTone(650, 0.6, 'sine');
+  soundBuffers['levelStart'] = generateTone(400, 0.4, 'sine');
   
   console.log('Placeholder sounds generated');
 };
