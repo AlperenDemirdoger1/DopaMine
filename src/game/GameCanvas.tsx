@@ -26,6 +26,7 @@ import {
   preloadGameSounds 
 } from './audio/audioManager';
 import MotionFeedback from './ui/MotionFeedback';
+import SkillBar, { Skill } from './ui/SkillBar';
 
 import { CountryCode } from './characters/CountryFlagSelector';
 
@@ -69,6 +70,36 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
     isAttacking: false,
     isTakingDamage: false
   });
+  
+  const [skills, setSkills] = useState<Skill[]>([
+    {
+      id: 'skill-attack',
+      name: 'Attack',
+      icon: '⚔️',
+      cooldown: 2,
+      lastUsed: null,
+      keyBinding: '1',
+      description: 'Deal damage to all enemies in range'
+    },
+    {
+      id: 'skill-heal',
+      name: 'Heal',
+      icon: '💖',
+      cooldown: 5,
+      lastUsed: null,
+      keyBinding: '2',
+      description: 'Restore health points'
+    },
+    {
+      id: 'skill-speed',
+      name: 'Speed Boost',
+      icon: '⚡',
+      cooldown: 8,
+      lastUsed: null,
+      keyBinding: '3',
+      description: 'Increase movement speed temporarily'
+    }
+  ]);
   
   useEffect(() => {
     preloadGameSounds();
@@ -677,6 +708,127 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
     playSound('buttonClick');
   };
   
+  const handleUseSkill = (skillId: string) => {
+    if (!gameState) return;
+    
+    const skillIndex = skills.findIndex(skill => skill.id === skillId);
+    if (skillIndex === -1) return;
+    
+    const now = Date.now();
+    const updatedSkills = [...skills];
+    updatedSkills[skillIndex] = {
+      ...updatedSkills[skillIndex],
+      lastUsed: now
+    };
+    setSkills(updatedSkills);
+    
+    switch (skillId) {
+      case 'skill-attack':
+        playSound('playerAttack');
+        setMotionState(prev => ({ ...prev, isAttacking: true }));
+        
+        setTimeout(() => {
+          setMotionState(prev => ({ ...prev, isAttacking: false }));
+        }, 200);
+        
+        const attackRange = 150;
+        const damageAmount = 15 + (gameState.player.level || 1) * 3;
+        
+        const newState = { ...gameState };
+        
+        newState.currentRoom.enemies = newState.currentRoom.enemies.map(enemy => {
+          const dx = enemy.position.x - gameState.player.position.x;
+          const dy = enemy.position.y - gameState.player.position.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < attackRange) {
+            enemy.health -= damageAmount;
+            
+            setFeedbackIndicators(prev => [
+              ...prev,
+              {
+                id: `skill-damage-${Date.now()}-${enemy.id}`,
+                type: 'damage',
+                value: damageAmount,
+                position: { 
+                  x: enemy.position.x, 
+                  y: enemy.position.y - 20 
+                }
+              }
+            ]);
+          }
+          
+          return enemy;
+        }).filter(enemy => enemy.health > 0);
+        
+        setGameState(newState);
+        break;
+        
+      case 'skill-heal':
+        playSound('powerUpCollect');
+        
+        const healAmount = 20 + (gameState.player.level || 1) * 5;
+        
+        setGameState({
+          ...gameState,
+          player: {
+            ...gameState.player,
+            health: Math.min(gameState.player.maxHealth, gameState.player.health + healAmount)
+          }
+        });
+        
+        setFeedbackIndicators(prev => [
+          ...prev,
+          {
+            id: `skill-heal-${Date.now()}`,
+            type: 'heal',
+            value: healAmount,
+            position: { 
+              x: gameState.player.position.x, 
+              y: gameState.player.position.y - 20 
+            }
+          }
+        ]);
+        break;
+        
+      case 'skill-speed':
+        playSound('skillActivate');
+        
+        const duration = 5; // 5 seconds
+        
+        setGameState({
+          ...gameState,
+          player: {
+            ...gameState.player,
+            activeEffects: [
+              ...(gameState.player.activeEffects || []),
+              {
+                type: 'speed',
+                value: 50,
+                duration,
+                startTime: now,
+                endTime: now + (duration * 1000)
+              }
+            ]
+          }
+        });
+        
+        setFeedbackIndicators(prev => [
+          ...prev,
+          {
+            id: `skill-speed-${Date.now()}`,
+            type: 'xp',
+            value: 50,
+            position: { 
+              x: gameState.player.position.x, 
+              y: gameState.player.position.y - 20 
+            }
+          }
+        ]);
+        break;
+    }
+  };
+  
   return (
     <div className="relative w-full h-full">
       <canvas
@@ -915,6 +1067,14 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
           isMoving={motionState.isMoving}
           isAttacking={motionState.isAttacking}
           isTakingDamage={motionState.isTakingDamage}
+        />
+      )}
+      
+      {/* Skill Bar */}
+      {gameState && (
+        <SkillBar 
+          skills={skills}
+          onUseSkill={handleUseSkill}
         />
       )}
       
