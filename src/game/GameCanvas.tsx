@@ -30,6 +30,8 @@ import SkillBar, { Skill } from './ui/SkillBar';
 import AttackVisualizer, { AttackVisualizerProps } from './combat/AttackVisualizer';
 import EnemyAttackController from './combat/EnemyAttackController';
 import ChapterSystem from './progression/ChapterSystem';
+import ThreeJsRenderer from './3d/ThreeJsRenderer';
+import ThreeJsToggle from './3d/ThreeJsToggle';
 
 import { CountryCode } from './characters/CountryFlagSelector';
 
@@ -77,6 +79,7 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
   const [activeAttacks, setActiveAttacks] = useState<AttackVisualizerProps[]>([]);
   const [enemyAttackDamage, setEnemyAttackDamage] = useState<number>(0);
   const [isChapterTransitioning, setIsChapterTransitioning] = useState<boolean>(false);
+  const [is3DEnabled, setIs3DEnabled] = useState<boolean>(false);
   
   const [skills, setSkills] = useState<Skill[]>([
     {
@@ -926,14 +929,39 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
     }
   };
   
+  const toggle3DMode = () => {
+    setIs3DEnabled(prev => !prev);
+    playSound('menuSelect');
+  };
+
   return (
     <div className="relative w-full h-full">
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="bg-gray-900"
-      />
+      {/* Render 2D canvas when 3D is disabled */}
+      {!is3DEnabled && (
+        <canvas
+          ref={canvasRef}
+          width={width}
+          height={height}
+          className="bg-gray-900"
+        />
+      )}
+      
+      {/* Render 3D scene when 3D is enabled */}
+      {is3DEnabled && gameState && (
+        <ThreeJsRenderer 
+          gameState={gameState}
+          width={width}
+          height={height}
+        />
+      )}
+      
+      {/* 3D Toggle Button */}
+      {gameState && !gameState.gameOver && (
+        <ThreeJsToggle 
+          is3DEnabled={is3DEnabled}
+          onToggle={toggle3DMode}
+        />
+      )}
       
       {/* ADHD-Friendly HUD */}
       <ADHDFriendlyHUD 
