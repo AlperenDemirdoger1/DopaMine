@@ -42,6 +42,9 @@ export interface Enemy {
   type: string;
   sprite: string;
   size: number;
+  lastAttackTime?: number;
+  attackCooldown?: number;
+  attackRange?: number;
 }
 
 export interface Room {

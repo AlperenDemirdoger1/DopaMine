@@ -28,6 +28,7 @@ import {
 import MotionFeedback from './ui/MotionFeedback';
 import SkillBar, { Skill } from './ui/SkillBar';
 import AttackVisualizer, { AttackVisualizerProps } from './combat/AttackVisualizer';
+import EnemyAttackController from './combat/EnemyAttackController';
 
 import { CountryCode } from './characters/CountryFlagSelector';
 
@@ -73,6 +74,7 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
   });
   
   const [activeAttacks, setActiveAttacks] = useState<AttackVisualizerProps[]>([]);
+  const [enemyAttackDamage, setEnemyAttackDamage] = useState<number>(0);
   
   const [skills, setSkills] = useState<Skill[]>([
     {
@@ -196,6 +198,36 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+  
+  useEffect(() => {
+    if (!gameState || enemyAttackDamage <= 0) return;
+    
+    const newState = { ...gameState };
+    newState.player.health = Math.max(0, newState.player.health - enemyAttackDamage);
+    
+    playSound('playerDamage');
+    
+    setFeedbackIndicators(prev => [
+      ...prev,
+      {
+        id: `damage-${Date.now()}`,
+        type: 'damage',
+        value: enemyAttackDamage,
+        position: { 
+          x: gameState.player.position.x, 
+          y: gameState.player.position.y - 20 
+        }
+      }
+    ]);
+    
+    if (newState.player.health <= 0) {
+      newState.gameOver = true;
+      playSound('gameOver');
+    }
+    
+    setGameState(newState);
+    setEnemyAttackDamage(0); // Reset damage
+  }, [enemyAttackDamage, gameState]);
   
   useEffect(() => {
     if (!gameState || !progression) return;
@@ -1104,6 +1136,23 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
           range={attack.range}
           duration={attack.duration}
           onComplete={attack.onComplete}
+        />
+      ))}
+      
+      {/* Enemy Attack Controllers */}
+      {gameState && gameState.currentRoom.enemies.map(enemy => (
+        <EnemyAttackController
+          key={`enemy-attack-${enemy.id}`}
+          enemy={enemy}
+          playerPosition={gameState.player.position}
+          onAttackComplete={(damage) => {
+            setEnemyAttackDamage(damage);
+            setMotionState(prev => ({ ...prev, isTakingDamage: true }));
+            
+            setTimeout(() => {
+              setMotionState(prev => ({ ...prev, isTakingDamage: false }));
+            }, 300);
+          }}
         />
       ))}
       
