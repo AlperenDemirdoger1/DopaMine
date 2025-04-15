@@ -27,6 +27,7 @@ import {
 } from './audio/audioManager';
 import MotionFeedback from './ui/MotionFeedback';
 import SkillBar, { Skill } from './ui/SkillBar';
+import AttackVisualizer, { AttackVisualizerProps } from './combat/AttackVisualizer';
 
 import { CountryCode } from './characters/CountryFlagSelector';
 
@@ -70,6 +71,8 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
     isAttacking: false,
     isTakingDamage: false
   });
+  
+  const [activeAttacks, setActiveAttacks] = useState<AttackVisualizerProps[]>([]);
   
   const [skills, setSkills] = useState<Skill[]>([
     {
@@ -734,6 +737,18 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
         const attackRange = 150;
         const damageAmount = 15 + (gameState.player.level || 1) * 3;
         
+        const attackVisualization: AttackVisualizerProps = {
+          attackType: 'melee',
+          sourcePosition: gameState.player.position,
+          direction: gameState.player.lastMoveDirection || { x: 0, y: 1 },
+          duration: 300,
+          onComplete: () => {
+            setActiveAttacks(prev => prev.filter(attack => attack !== attackVisualization));
+          }
+        };
+        
+        setActiveAttacks(prev => [...prev, attackVisualization]);
+        
         const newState = { ...gameState };
         
         newState.currentRoom.enemies = newState.currentRoom.enemies.map(enemy => {
@@ -1077,6 +1092,20 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
           onUseSkill={handleUseSkill}
         />
       )}
+      
+      {/* Attack Visualizations */}
+      {activeAttacks.map((attack, index) => (
+        <AttackVisualizer
+          key={`attack-${index}`}
+          attackType={attack.attackType}
+          sourcePosition={attack.sourcePosition}
+          targetPosition={attack.targetPosition}
+          direction={attack.direction}
+          range={attack.range}
+          duration={attack.duration}
+          onComplete={attack.onComplete}
+        />
+      ))}
       
       {/* Game Over Screen */}
       {gameState?.gameOver && (

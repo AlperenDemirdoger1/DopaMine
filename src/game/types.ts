@@ -29,6 +29,7 @@ export interface Player {
   coins: number;
   gems: number;
   keys: number;
+  lastMoveDirection?: Position;
 }
 
 export interface Enemy {
