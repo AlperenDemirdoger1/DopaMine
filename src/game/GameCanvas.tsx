@@ -25,6 +25,7 @@ import {
   playSound, 
   preloadGameSounds 
 } from './audio/audioManager';
+import MotionFeedback from './ui/MotionFeedback';
 
 import { CountryCode } from './characters/CountryFlagSelector';
 
@@ -57,6 +58,16 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
     levelUp: false,
     achievement: null,
     mission: null
+  });
+  
+  const [motionState, setMotionState] = useState<{
+    isMoving: boolean;
+    isAttacking: boolean;
+    isTakingDamage: boolean;
+  }>({
+    isMoving: false,
+    isAttacking: false,
+    isTakingDamage: false
   });
   
   useEffect(() => {
@@ -165,10 +176,20 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
           prevPosition.y !== newState.player.position.y
         ) {
           playSound('playerMove', { volume: 0.3 });
+          setMotionState(prev => ({ ...prev, isMoving: true }));
+          
+          setTimeout(() => {
+            setMotionState(prev => ({ ...prev, isMoving: false }));
+          }, 150);
         }
         
         if (keys.has(' ')) {
           playSound('playerAttack');
+          setMotionState(prev => ({ ...prev, isAttacking: true }));
+          
+          setTimeout(() => {
+            setMotionState(prev => ({ ...prev, isAttacking: false }));
+          }, 200);
           
           const prevEnemies = gameState.currentRoom.enemies;
           const newEnemies = newState.currentRoom.enemies;
@@ -333,6 +354,12 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
             newState.player.health -= enemy.damage;
             
             playSound('playerDamage');
+            setMotionState(prev => ({ ...prev, isTakingDamage: true }));
+            
+            setTimeout(() => {
+              setMotionState(prev => ({ ...prev, isTakingDamage: false }));
+            }, 300);
+            
             setFeedbackIndicators(prev => [
               ...prev,
               {
@@ -880,6 +907,15 @@ const GameCanvas = ({ width, height, characterType, characterAppearance, country
             Speed
           </button>
         </div>
+      )}
+      
+      {/* Motion Feedback Effects */}
+      {gameState && (
+        <MotionFeedback
+          isMoving={motionState.isMoving}
+          isAttacking={motionState.isAttacking}
+          isTakingDamage={motionState.isTakingDamage}
+        />
       )}
       
       {/* Game Over Screen */}
