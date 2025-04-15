@@ -10,10 +10,10 @@ interface GameProps {
 }
 
 const Game: React.FC<GameProps> = ({ characterType, countryFlag, onBackToMenu }) => {
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
+  const [_, setGameStarted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [gameOver, setGameOver] = useState<boolean>(false);
-  const [score, setScore] = useState<number>(0);
+  const [score, _setScore] = useState<number>(0);
   
   useEffect(() => {
     const loadingTimer = setTimeout(() => {
@@ -24,10 +24,10 @@ const Game: React.FC<GameProps> = ({ characterType, countryFlag, onBackToMenu })
     return () => clearTimeout(loadingTimer);
   }, []);
   
-  const handleGameOver = (finalScore: number) => {
-    setGameOver(true);
-    setScore(finalScore);
-  };
+  // const handleGameOver = (finalScore: number) => {
+  //   setGameOver(true);
+  //   setScore(finalScore);
+  // };
   
   const handleRestart = () => {
     setGameOver(false);

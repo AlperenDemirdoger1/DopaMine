@@ -1,4 +1,4 @@
-import { PowerUpEffect } from '../types';
+// import { PowerUpEffect } from '../types';
 
 export interface Achievement {
   id: string;

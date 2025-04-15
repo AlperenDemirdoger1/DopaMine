@@ -9,7 +9,7 @@ interface ADHDFriendlyHUDProps {
 }
 
 
-export const ADHDFriendlyHUD: React.FC<ADHDFriendlyHUDProps> = ({ gameState, width, height }) => {
+export const ADHDFriendlyHUD: React.FC<ADHDFriendlyHUDProps> = ({ gameState }) => {
   if (!gameState) return null;
   
   const healthPercentage = gameState.player.health / gameState.player.maxHealth;
