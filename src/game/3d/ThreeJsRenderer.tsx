@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { GameState, Enemy, Player, PowerUp, Collectible, Obstacle } from '../types';
 
 interface ThreeJsRendererProps {
