@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createCharacter } from '../game/characters/characterClasses';
 import { handleInput } from '../game/inputHandler';
 import { GameState } from '../game/types';
@@ -42,7 +42,7 @@ describe('Game Initialization Tests', () => {
   });
   
   it('should generate a level with enemies, powerups, and collectibles', () => {
-    const { room, powerUps, collectibles } = generateLevelWithPowerUps(800, 600, 1, { x: 400, y: 300 });
+    const { room, powerUps, collectibles } = generateLevelWithPowerUps(800, 600, 1, 1, { x: 400, y: 300 });
     
     expect(room).toBeDefined();
     expect(room.enemies.length).toBeGreaterThan(0);
@@ -58,7 +58,7 @@ describe('Player Movement Tests', () => {
   
   beforeEach(() => {
     const warrior = createCharacter('warrior', { x: 400, y: 300 });
-    const { room, powerUps, collectibles } = generateLevelWithPowerUps(800, 600, 1, warrior.position);
+    const { room, powerUps, collectibles, obstacles } = generateLevelWithPowerUps(800, 600, 1, 1, warrior.position);
     
     gameState = {
       player: {
@@ -88,7 +88,10 @@ describe('Player Movement Tests', () => {
       characterType: warrior.type,
       characterAppearance: warrior.appearance,
       powerUps: powerUps,
-      collectibles: collectibles
+      collectibles: collectibles,
+      obstacles: obstacles,
+      difficulty: 1,
+      skillsAvailable: false
     };
   });
   
@@ -158,7 +161,7 @@ describe('Combat Initiation Tests', () => {
   
   beforeEach(() => {
     const warrior = createCharacter('warrior', { x: 400, y: 300 });
-    const { room, powerUps, collectibles } = generateLevelWithPowerUps(800, 600, 1, warrior.position);
+    const { room, powerUps, collectibles, obstacles } = generateLevelWithPowerUps(800, 600, 1, 1, warrior.position);
     
     if (room.enemies.length > 0) {
       room.enemies[0].position = { x: warrior.position.x + 50, y: warrior.position.y };
@@ -192,7 +195,10 @@ describe('Combat Initiation Tests', () => {
       characterType: warrior.type,
       characterAppearance: warrior.appearance,
       powerUps: powerUps,
-      collectibles: collectibles
+      collectibles: collectibles,
+      obstacles: obstacles,
+      difficulty: 1,
+      skillsAvailable: false
     };
   });
   
